@@ -1,0 +1,113 @@
+<resources>
+    <string name="app_name">Alara</string>
+
+    <!-- Main/Exposure -->
+    <string name="main_message_top"> Your child has reached </string>
+    <string name="exposure"> 70 </string>
+    <string name="exposure_percent"> 70% </string>
+    <string name="main_message_bottom"> of their daily \n recommended \n exposure </string>
+
+    <!-- Menu -->
+    <string name="action_bluetooth"> Bluetooth </string>
+    <string name="action_settings">Settings</string>
+    <string name="daily_exposure"> Daily Exposure </string>
+
+    <!-- Strings related to Settings -->
+    <string name="pref_header"> Settings </string>
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_title_display_name"> User Name </string>
+    <string name="pref_default_display_name"> Jane Doe </string>
+
+    <string name="pref_title_sunscreen_switch"> Sunscreen </string>
+    <string name="pref_description_sunscreen_switch"> Switch ON if you are wearing sunscreen
+    </string>
+
+    <!-- AG: Fitzpatrick Scale Skin Types -->
+    <string name="skin_types"> Skin type </string>
+    <string-array name="list_skin_types">
+        <item> Type I: Always burns, doesn\'t tan </item>
+        <item> Type II: Burns easily </item>
+        <item> Type III: Tans after initial burn </item>
+        <item> Type IV: Burns minimally, tans easily </item>
+        <item> Type V: Rarely burns, tans well </item>
+        <item> Type VI: Never burns, always tan </item>
+    </string-array>
+
+    <!-- AG: MED doses (mJ/cm^2), using conservative values according to http://www.bioline.org.br/pdf?dv09029 -->
+    <string-array name="MEDs_by_skin_type">
+        <item>15</item>
+        <item>25</item>
+        <item>30</item>
+        <item>40</item>
+        <item>60</item>
+        <item>90</item>
+
+    </string-array>
+
+    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
+    <string-array name="pref_example_list_titles">
+        <item>Always</item>
+        <item>When possible</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+
+    <!-- Example settings for Data & Sync -->
+    <string name="pref_header_data_sync">Data &amp; sync</string>
+
+    <string name="pref_title_sync_frequency">Sync frequency</string>
+    <string-array name="pref_sync_frequency_titles">
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+        <item>3 hours</item>
+        <item>6 hours</item>
+        <item> Always </item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>180</item>
+        <item>360</item>
+        <item> 1 </item>
+        <item>-1</item>
+    </string-array>
+
+    <string-array name="list_preference_entry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="multi_select_list_preference_default_value" />
+
+    <string name="pref_title_system_sync_settings">System sync settings</string>
+
+    <!-- Example settings for Notifications -->
+    <string name="pref_header_notifications">Notifications</string>
+
+    <string name="pref_title_exposure_update_notifications"> Exposure update notifications </string>
+
+    <string name="pref_title_ringtone">Ringtone</string>
+    <string name="pref_ringtone_silent">Silent</string>
+    <string name="pref_title_vibrate">Vibrate</string>
+
+    <string name="notification_title"> Alara %1$s</string>
+
+    <string name="notification_text"> Your child is at risk of developing a sunburn %1$s
+    </string>
+    <string name="notification_subtext" > We recommend reapplying sunscreen or finding some shade </string>
+
+    <string name="action_share">Share</string>
+    <string name="action_reply">Reply</string>
+
+</resources>
