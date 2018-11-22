@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="burnnotice.capstone.alara" >
 
+    <!-- AG: Added permissions for BluetoothActivity -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -30,6 +31,12 @@
         <activity
             android:name=".SettingsActivity"
             android:label="@string/pref_header"
+            android:parentActivityName=".MainActivity" />
+
+        // Bluetooth Activity
+        <activity
+            android:name=".BluetoothActivity"
+            android:label="@string/action_bluetooth"
             android:parentActivityName=".MainActivity" />
 
     </application>

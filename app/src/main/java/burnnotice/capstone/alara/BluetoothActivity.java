@@ -50,7 +50,9 @@ public class BluetoothActivity extends Activity
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.content_main);
+
+        // AG: Changed layout to Bluetooth xml, instead of Main
+        setContentView(R.layout.content_bluetooth);
 
         Button openButton = (Button)findViewById(R.id.open);
         Button sendButton = (Button)findViewById(R.id.send);
@@ -65,8 +67,9 @@ public class BluetoothActivity extends Activity
             {
                 try
                 {
-                    findBT();
-                    openBT();
+                    // AG: Changed to if statement, to handle case when BT not available
+                    if (findBT()) {
+                    openBT(); }
                 }
                 catch (IOException ex) { }
             }
@@ -82,6 +85,7 @@ public class BluetoothActivity extends Activity
                     sendData();
                 }
                 catch (IOException ex) { }
+                catch (NullPointerException NPE) { } // AG: Can press send, even if nothing opened
             }
         });
 
@@ -95,22 +99,26 @@ public class BluetoothActivity extends Activity
                     closeBT();
                 }
                 catch (IOException ex) { }
+                catch (NullPointerException NPE) { } // AG: Can press close, even if nothing opened
             }
         });
     }
 
-    public void findBT()
+    // AG: Changed void to boolean method to pass by openBT if BT not found/null
+    public boolean findBT()
     {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if(mBluetoothAdapter == null)
         {
             myLabel.setText("No bluetooth adapter available");
+            return false; // AG: Can return, even if void method; will quit method
         }
 
         if(!mBluetoothAdapter.isEnabled())
         {
             Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBluetooth, 0);
+            return false;
         }
 
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
@@ -121,11 +129,12 @@ public class BluetoothActivity extends Activity
                 if(device.getName().equals("Burn Notice BLE1"))
                 {
                     mmDevice = device;
-                    break;
+                    break; // AG: ends for loop
                 }
             }
         }
         myLabel.setText("Bluetooth Device Found");
+        return true;
     }
 
     void openBT() throws IOException
