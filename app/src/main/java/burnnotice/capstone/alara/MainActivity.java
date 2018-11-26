@@ -1,21 +1,21 @@
 package burnnotice.capstone.alara;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import static burnnotice.capstone.alara.BluetoothActivity.exposure_percentage;
 
 
 public class MainActivity extends AppCompatActivity {
 
-//    BluetoothAdapter mBluetoothAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,9 +56,49 @@ public class MainActivity extends AppCompatActivity {
         }
         else if (id == R.id.action_bluetooth) {
             startActivity(new Intent(this, BluetoothActivity.class));
+            startProgress();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    boolean notification_sent = false;
+
+    // AG: Creating method to continuously update progress bar
+    private void startProgress() {
+        final ProgressBar progressBar = findViewById(R.id.progressBar);
+        final TextView progressPercent = findViewById(R.id.progressPercent);
+
+        Thread progressThread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                while (true) {
+                    // AG: Update progress bar
+                    progressBar.setProgress((int) exposure_percentage);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // AG: Change % value of progress TextView
+                            progressPercent.setText(String.valueOf(progressBar.getProgress()) + " %");
+
+                            // AG: If dangerous exposure, send notification
+                            if (exposure_percentage >= 80 & !notification_sent) {
+                                NotificationActivity.notifyExposure(getApplicationContext(), "", 1);
+                                notification_sent = true;
+                            }
+                        }
+                    });
+                    try {
+                        Thread.sleep(1000); // AG: Time between updates (1 second)
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        progressThread.start();
     }
 }

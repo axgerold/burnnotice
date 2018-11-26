@@ -193,7 +193,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // guidelines.
             bindPreferenceSummaryToValue(findPreference("example_text"));
             bindPreferenceSummaryToValue(findPreference("example_list"));
-        }
+            }
 
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {

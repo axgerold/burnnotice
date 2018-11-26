@@ -14,7 +14,8 @@
 
     <!-- AG: Skin type -->
     <ListPreference
-        android:defaultValue="-1"
+        android:id="@+id/skin_types"
+        android:defaultValue="1"
         android:entries="@array/list_skin_types"
         android:entryValues="@array/MEDs_by_skin_type"
         android:key="example_list"

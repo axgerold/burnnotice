@@ -3,8 +3,8 @@
 
     <!-- Main/Exposure -->
     <string name="main_message_top"> Your child has reached </string>
-    <string name="exposure"> 70 </string>
-    <string name="exposure_percent"> 70% </string>
+    <string name="exposure"> 0 </string>
+    <string name="exposure_percent"> 0% </string>
     <string name="main_message_bottom"> of their daily \n recommended \n exposure </string>
 
     <!-- Menu -->

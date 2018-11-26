@@ -4,10 +4,11 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.content.res.TypedArrayUtils;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.EditText;
@@ -16,12 +17,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
-import static java.lang.Double.NaN;
 
 // AG: Modified from https://stackoverflow.com/questions/13450406/ ...
 // ... how-to-receive-serial-data-using-android-bluetooth
@@ -42,9 +40,9 @@ public class BluetoothActivity extends Activity
     volatile boolean stopWorker;
 
     // AG: Initialize variables
-    double dbl_data, volts, uv_index, instant_irradiance, cumulative_irradiance, int_progress, user_MED = NaN;
-    String str_progress = "";
+    public static double dbl_data, volts, uv_index, instant_irradiance, cumulative_irradiance, exposure_percentage, user_MED = 0;
     List<Double> history_irradiance = new ArrayList<>();
+    String user_input_MED;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -59,6 +57,9 @@ public class BluetoothActivity extends Activity
         Button closeButton = (Button)findViewById(R.id.close);
         myLabel = (TextView)findViewById(R.id.label);
         myTextbox = (EditText)findViewById(R.id.entry);
+
+        // TODO: Remove after testing
+        exposure_percentage = exposure_percentage + 20;
 
         //Open Button
         openButton.setOnClickListener(new View.OnClickListener()
@@ -188,6 +189,7 @@ public class BluetoothActivity extends Activity
                                         public void run()
                                         {
                                             myLabel.setText(data);
+                                            getSkinType();
                                             calculateExposure(data);
                                         }
                                     });
@@ -210,6 +212,34 @@ public class BluetoothActivity extends Activity
         workerThread.start();
     }
 
+    // AG: Created method to get skin type from user
+    void getSkinType() {
+        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+        String defaultValue = getResources().getStringArray(R.array.list_skin_types)[0];
+        user_input_MED = sharedPref.getString(getString(R.string.skin_types), defaultValue);
+
+        if (user_input_MED.equals("Type I: Always burns, doesn't tan")) {
+            user_MED = 15;
+        }
+        else if (user_input_MED.equals("Type II: Burns easily")) {
+            user_MED = 25;
+        }
+        else if (user_input_MED.equals("Type III: Tans after initial burn")) {
+            user_MED = 30;
+        }
+        else if (user_input_MED.equals("Type IV: Burns minimally, tans easily")) {
+            user_MED = 40;
+        }
+        else if (user_input_MED.equals("Type V: Rarely burns, tans well")) {
+            user_MED = 60;
+        }
+        else if (user_input_MED.equals("Type VI: Never burns, always tan")) {
+            user_MED = 90;
+        }
+
+        System.out.printf("User MED is: %d", user_MED);
+    }
+
     // AG: Created method to take input data and calculate exposure
     void calculateExposure(String str_data) {
         dbl_data = Double.parseDouble(str_data); // AG: convert string to double
@@ -223,14 +253,11 @@ public class BluetoothActivity extends Activity
         instant_irradiance = uv_index * 0.0025; // AG: convert UV index to instant_irradiance (1 = 0.0025 mW/cm^2)
         // AG: UV index conversion according to https://escholarship.org/uc/item/5925w4hq
         cumulative_irradiance = cumulative_irradiance + instant_irradiance;
-        // TODO: Cumulative irradiance must update progress bar (content_main.xml)
-        int_progress = cumulative_irradiance / user_MED;
-        str_progress = Double.toString(int_progress);
-        // TODO: Must factor in time prior to skin type MED/preference time
-        // TODO: Must trigger NotificationActivity
+        exposure_percentage = cumulative_irradiance / user_MED;
+
+        // TODO: Verify output
+
         history_irradiance.add(instant_irradiance);
-        System.out.println(cumulative_irradiance);
-        // TODO: Remove print statement after verifying functionality
     }
 
     void sendData() throws IOException
