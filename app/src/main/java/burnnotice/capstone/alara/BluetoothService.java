@@ -22,20 +22,20 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import static android.support.constraint.Constraints.TAG;
+import static burnnotice.capstone.alara.BluetoothReceiver.dbl_received_data;
 
 // AG: Modified from https://stackoverflow.com/questions/13450406/ ...
 // ... how-to-receive-serial-data-using-android-bluetooth
 
 public class BluetoothService extends Service
 {
-    TextView myLabel;
+//    TextView myLabel;
     EditText myTextbox;
     BluetoothAdapter mBluetoothAdapter;
     BluetoothSocket mmSocket;
@@ -49,8 +49,8 @@ public class BluetoothService extends Service
     volatile boolean stopWorker;
 
     // AG: Initialize variables
-    public static double dbl_data, volts, uv_index, instant_irradiance, cumulative_irradiance, exposure_percentage, user_MED = 0;
-    List<Double> history_irradiance = new LinkedList<>();
+    public static double volts, uv_index, instant_irradiance, cumul_irradiance, exposure_percent, user_MED = 0;
+    LinkedList<Double> history_irradiance = new LinkedList<>();
     String user_input_MED;
 
     // AG: Created for Service
@@ -79,7 +79,7 @@ public class BluetoothService extends Service
                 openBT();
                 }
             }
-            catch (IOException ex) { }
+            catch (IOException ex) { ex.printStackTrace();}
 
 //        setContentView(R.layout.content_bluetooth);
 //
@@ -150,7 +150,7 @@ public class BluetoothService extends Service
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if(mBluetoothAdapter == null)
         {
-            myLabel.setText("No bluetooth adapter available");
+            Log.d("STATUS","No bluetooth adapter available");
             return false; // AG: Can return, even if void method; will quit method
         }
 
@@ -174,7 +174,7 @@ public class BluetoothService extends Service
                 }
             }
         }
-        myLabel.setText("Bluetooth Device Found");
+        Log.d("STATUS","Bluetooth Device Found");
         return true;
     }
 
@@ -205,7 +205,7 @@ public class BluetoothService extends Service
 
         beginListenForData();
 
-        myLabel.setText("Bluetooth Opened");
+        Log.d("STATUS","Bluetooth Opened");
     }
 
     void beginListenForData()
@@ -244,7 +244,7 @@ public class BluetoothService extends Service
                                     {
                                         public void run()
                                         {
-                                            myLabel.setText(data);
+                                            Log.d("Data: ",data);
                                             getSkinType();
                                             calculateExposure(data);
                                         }
@@ -299,18 +299,18 @@ public class BluetoothService extends Service
 
     // AG: Created method to take input data and calculate exposure
     void calculateExposure(String str_data) {
-        dbl_data = Double.parseDouble(str_data); // AG: convert string to double
-        if (dbl_data < 0) { // AG: if negative value, assume negligible and approximately 0
-            dbl_data = 0;
+        dbl_received_data = Double.parseDouble(str_data); // AG: convert string to double
+        if (dbl_received_data < 0) { // AG: if negative value, assume negligible and approximately 0
+            dbl_received_data = 0;
         }
 
         // TODO: Change voltage as necessary
-        volts = dbl_data / 4096 * 5; // AG: convert bits (bytes?) to voltage
+        volts = dbl_received_data / 4096 * 5; // AG: convert bits (bytes?) to voltage
         uv_index = volts / 10;
         instant_irradiance = uv_index * 0.0025; // AG: convert UV index to instant_irradiance (1 = 0.0025 mW/cm^2)
         // AG: UV index conversion according to https://escholarship.org/uc/item/5925w4hq
-        cumulative_irradiance = cumulative_irradiance + instant_irradiance;
-        exposure_percentage = cumulative_irradiance / user_MED;
+        cumul_irradiance = cumul_irradiance + instant_irradiance;
+        exposure_percent = cumul_irradiance / user_MED;
 
         // TODO: Verify output
 
@@ -322,7 +322,7 @@ public class BluetoothService extends Service
         String msg = myTextbox.getText().toString();
         msg += "\n";
         mmOutputStream.write(msg.getBytes());
-        myLabel.setText("Data Sent");
+        Log.d("STATUS","Data Sent");
     }
 
     void closeBT() throws IOException
@@ -331,6 +331,6 @@ public class BluetoothService extends Service
         mmOutputStream.close();
         mmInputStream.close();
         mmSocket.close();
-        myLabel.setText("Bluetooth Closed");
+        Log.d("STATUS","Bluetooth Closed");
     }
 }
