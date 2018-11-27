@@ -10,9 +10,9 @@
         android:title="@string/action_settings"
         android:visible="true"
         app:showAsAction="never" />
-    <item
-        android:id="@+id/action_bluetooth"
-        android:checked="false"
-        android:title="@string/action_bluetooth"
-        android:visible="true" />
+    <!--<item-->
+        <!--android:id="@+id/action_bluetooth"-->
+        <!--android:checked="false"-->
+        <!--android:title="@string/action_bluetooth"-->
+        <!--android:visible="true" />-->
 </menu>

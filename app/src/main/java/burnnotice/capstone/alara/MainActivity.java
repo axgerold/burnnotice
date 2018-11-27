@@ -1,5 +1,6 @@
 package burnnotice.capstone.alara;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -11,7 +12,7 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import static burnnotice.capstone.alara.BluetoothActivity.exposure_percentage;
+import static burnnotice.capstone.alara.BluetoothService.exposure_percentage;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -24,13 +25,15 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-//        AG: Use button function to send test notifications
-        final Button test_notif_button = findViewById(R.id.test_notif_button);
-        test_notif_button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                NotificationActivity.notifyExposure(getApplicationContext(), "", 1);
-            }
-        });
+        // AG: Starts Bluetooth connection
+        startService(new Intent(this, BluetoothService.class));
+////        AG: Use button function to send test notifications
+//        final Button test_notif_button = findViewById(R.id.test_notif_button);
+//        test_notif_button.setOnClickListener(new View.OnClickListener() {
+//            public void onClick(View v) {
+//                Notifications.notifyExposure(getApplicationContext(), "", 1);
+//            }
+//        });
 
     }
 
@@ -54,11 +57,11 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
-        else if (id == R.id.action_bluetooth) {
-            startActivity(new Intent(this, BluetoothActivity.class));
-            startProgress();
-            return true;
-        }
+//        else if (id == R.id.action_bluetooth) {
+//            startActivity(new Intent(this, BluetoothService.class));
+//            startProgress();
+//            return true;
+//        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -85,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
 
                             // AG: If dangerous exposure, send notification
                             if (exposure_percentage >= 80 & !notification_sent) {
-                                NotificationActivity.notifyExposure(getApplicationContext(), "", 1);
+                                Notifications.notifyExposure(getApplicationContext(), "", 1);
                                 notification_sent = true;
                             }
                         }

@@ -1,6 +1,7 @@
 package burnnotice.capstone.alara;
 
 import android.app.Activity;
+import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -9,15 +10,20 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.EditText;
 import android.widget.Button;
+
+import org.jetbrains.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -27,7 +33,7 @@ import static android.support.constraint.Constraints.TAG;
 // AG: Modified from https://stackoverflow.com/questions/13450406/ ...
 // ... how-to-receive-serial-data-using-android-bluetooth
 
-public class BluetoothActivity extends Activity
+public class BluetoothService extends Service
 {
     TextView myLabel;
     EditText myTextbox;
@@ -44,69 +50,98 @@ public class BluetoothActivity extends Activity
 
     // AG: Initialize variables
     public static double dbl_data, volts, uv_index, instant_irradiance, cumulative_irradiance, exposure_percentage, user_MED = 0;
-    List<Double> history_irradiance = new ArrayList<>();
+    List<Double> history_irradiance = new LinkedList<>();
     String user_input_MED;
 
+    // AG: Created for Service
+    @Nullable
     @Override
+    public IBinder onBind(Intent intent) {
+        return null; // AG: Don't need to bind
+    }
+
+    // AG: Created for Service, runs until app is closed
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_STICKY;
+    }
+
+    // AG: Changed Bluetooth to Service, no longer need GUI buttons in onCreate
     public void onCreate(Bundle savedInstanceState)
     {
-        super.onCreate(savedInstanceState);
+        super.onCreate();
 
-        // AG: Changed layout to Bluetooth xml, instead of Main
-        setContentView(R.layout.content_bluetooth);
-
-        Button openButton = (Button)findViewById(R.id.open);
-        Button sendButton = (Button)findViewById(R.id.send);
-        Button closeButton = (Button)findViewById(R.id.close);
-        myLabel = (TextView)findViewById(R.id.label);
-        myTextbox = (EditText)findViewById(R.id.entry);
-
-        // TODO: Remove after testing
-        exposure_percentage = exposure_percentage + 20;
-
-        //Open Button
-        openButton.setOnClickListener(new View.OnClickListener()
-        {
-            public void onClick(View v)
+        // AG: Connect to device via BT
+            try
             {
-                try
-                {
-                    // AG: Changed to if statement, to handle case when BT not available
-                    if (findBT()) {
-                    openBT();
-                    }
+                // AG: Changed to if statement, to handle case when BT not available
+                if (findBT()) {
+                openBT();
                 }
-                catch (IOException ex) { }
             }
-        });
+            catch (IOException ex) { }
+
+//        setContentView(R.layout.content_bluetooth);
+//
+//        Button openButton = (Button)findViewById(R.id.open);
+//        Button sendButton = (Button)findViewById(R.id.send);
+//        Button closeButton = (Button)findViewById(R.id.close);
+//        myLabel = (TextView)findViewById(R.id.label);
+//        myTextbox = (EditText)findViewById(R.id.entry);
+//
+//        //Open Button
+//        openButton.setOnClickListener(new View.OnClickListener()
+//        {
+//            public void onClick(View v)
+//            {
+//                try
+//                {
+//                    // AG: Changed to if statement, to handle case when BT not available
+//                    if (findBT()) {
+//                    openBT();
+//                    }
+//                }
+//                catch (IOException ex) { }
+//            }
+//        });
 
         //Send Button
-        sendButton.setOnClickListener(new View.OnClickListener()
-        {
-            public void onClick(View v)
-            {
-                try
-                {
-                    sendData();
-                }
-                catch (IOException ex) { }
-                catch (NullPointerException NPE) { } // AG: Can press send, even if nothing opened
-            }
-        });
+//        sendButton.setOnClickListener(new View.OnClickListener()
+//        {
+//            public void onClick(View v)
+//            {
+//                try
+//                {
+//                    sendData();
+//                }
+//                catch (IOException ex) { }
+//                catch (NullPointerException NPE) { } // AG: Can press send, even if nothing opened
+//            }
+//        });
 
         //Close button
-        closeButton.setOnClickListener(new View.OnClickListener()
-        {
-            public void onClick(View v)
-            {
-                try
-                {
-                    closeBT();
-                }
-                catch (IOException ex) { }
-                catch (NullPointerException NPE) { } // AG: Can press close, even if nothing opened
-            }
-        });
+//        closeButton.setOnClickListener(new View.OnClickListener()
+//        {
+//            public void onClick(View v)
+//            {
+//                try
+//                {
+//                    closeBT();
+//                }
+//                catch (IOException ex) { }
+//                catch (NullPointerException NPE) { } // AG: Can press close, even if nothing opened
+//            }
+//        });
+    }
+
+    // AG: Created for Service
+    public void onDestroy() {
+        try {
+            closeBT();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        super.onDestroy();
     }
 
     // AG: Changed void to boolean method to pass by openBT if BT not found/null
@@ -119,14 +154,15 @@ public class BluetoothActivity extends Activity
             return false; // AG: Can return, even if void method; will quit method
         }
 
-        if(!mBluetoothAdapter.isEnabled())
-        {
-            Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBluetooth, 0);
-            return false;
-        }
+//        if(!mBluetoothAdapter.isEnabled())
+//        {
+//            Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//            startActivityForResult(enableBluetooth, 0);
+//            return false;
+//        }
 
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+
         if(pairedDevices.size() > 0)
         {
             for(BluetoothDevice device : pairedDevices)
@@ -160,9 +196,7 @@ public class BluetoothActivity extends Activity
         } catch (IOException e) {
             try {
                 mmSocket.close();
-                Log.d(TAG, "Cannot connect");
             } catch (IOException e1) {
-                Log.d(TAG, "Socket not closed");
                 e1.printStackTrace();
             }
         }
@@ -178,7 +212,6 @@ public class BluetoothActivity extends Activity
     {
         final Handler handler = new Handler();
 
-        // TODO: Change delimiter to find data of interest
         final byte delimiter = 10; //This is the ASCII code for a newline character
 
         stopWorker = false;
@@ -237,7 +270,8 @@ public class BluetoothActivity extends Activity
 
     // AG: Created method to get skin type from user
     void getSkinType() {
-        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+
+        SharedPreferences sharedPref = getApplicationContext().getSharedPreferences("User Entered Skin Type", Context.MODE_PRIVATE);
         String defaultValue = getResources().getStringArray(R.array.list_skin_types)[0];
         user_input_MED = sharedPref.getString(getString(R.string.skin_types), defaultValue);
 
@@ -260,7 +294,7 @@ public class BluetoothActivity extends Activity
             user_MED = 90;
         }
 
-        System.out.printf("User MED is: %d", user_MED);
+        Log.d("User MED is: %d", String.valueOf(user_MED));
     }
 
     // AG: Created method to take input data and calculate exposure
