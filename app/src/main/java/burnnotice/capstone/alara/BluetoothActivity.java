@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.EditText;
@@ -20,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import static android.support.constraint.Constraints.TAG;
 
 // AG: Modified from https://stackoverflow.com/questions/13450406/ ...
 // ... how-to-receive-serial-data-using-android-bluetooth
@@ -70,7 +73,8 @@ public class BluetoothActivity extends Activity
                 {
                     // AG: Changed to if statement, to handle case when BT not available
                     if (findBT()) {
-                    openBT(); }
+                    openBT();
+                    }
                 }
                 catch (IOException ex) { }
             }
@@ -138,11 +142,30 @@ public class BluetoothActivity extends Activity
         return true;
     }
 
+    /** Nordic UART Service UUID */
+    private final static UUID UART_SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
+    /** RX characteristic UUID */
+    private final static UUID UART_RX_CHARACTERISTIC_UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
+    /** TX characteristic UUID */
+    private final static UUID UART_TX_CHARACTERISTIC_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
+
+
     void openBT() throws IOException
     {
-        UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); //Standard SerialPortService ID
-        mmSocket = mmDevice.createRfcommSocketToServiceRecord(uuid);
-        mmSocket.connect();
+        // AG : Imported UART UUIDs
+        UUID uuid = UART_SERVICE_UUID;
+        mmSocket = mmDevice.createInsecureRfcommSocketToServiceRecord(uuid);
+        try {
+            mmSocket.connect();
+        } catch (IOException e) {
+            try {
+                mmSocket.close();
+                Log.d(TAG, "Cannot connect");
+            } catch (IOException e1) {
+                Log.d(TAG, "Socket not closed");
+                e1.printStackTrace();
+            }
+        }
         mmOutputStream = mmSocket.getOutputStream();
         mmInputStream = mmSocket.getInputStream();
 
