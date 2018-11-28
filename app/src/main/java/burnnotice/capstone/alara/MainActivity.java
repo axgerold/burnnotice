@@ -1,10 +1,13 @@
 package burnnotice.capstone.alara;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,12 +15,10 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import static burnnotice.capstone.alara.BluetoothService.exposure_percent;
-import static burnnotice.capstone.alara.BluetoothReceiver.dbl_received_data;
-
-
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private static double calculated_exposure_percentage = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,9 +28,10 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         // AG: Starts Bluetooth connection
-        startService(new Intent(this, BluetoothService.class));
-        BluetoothReceiver bluetoothReceiver = new BluetoothReceiver();
-        bluetoothReceiver.onReceive(this, getIntent());
+        Log.d(TAG, "onCreate running, ready to start Service");
+        startService(new Intent(getApplicationContext(), BluetoothService.class));
+        BroadcastReceiver myReceiver = new mBroadcastReceiver();
+        registerReceiver(myReceiver, new IntentFilter("Alara.Broadcast.EXPOSURE"));
 
 //        AG: Use button function to send test notifications
         final Button test_notif_button = findViewById(R.id.test_notif_button);
@@ -72,6 +74,19 @@ public class MainActivity extends AppCompatActivity {
 
     boolean notification_sent = false;
 
+    // AG: Creating receiver for broadcast
+    public class mBroadcastReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) { // AG: runs on UI thread
+
+            Bundle bundle = intent.getExtras();
+            calculated_exposure_percentage = bundle.getInt("CALCULATED_EXPOSURE");
+            updateProgress();
+        }
+
+    }
+
     // AG: Creating method to continuously update progress bar
     private void updateProgress() {
         final ProgressBar progressBar = findViewById(R.id.progressBar);
@@ -83,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 while (true) {
                     // AG: Update progress bar
-                    progressBar.setProgress((int) exposure_percent);
+                    progressBar.setProgress((int) calculated_exposure_percentage);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -91,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
                             progressPercent.setText(String.valueOf(progressBar.getProgress()) + " %");
 
                             // AG: If dangerous exposure, send notification
-                            if (exposure_percent >= 80 & !notification_sent) {
+                            if (calculated_exposure_percentage >= 80 & !notification_sent) {
                                 Notifications.notifyExposure(getApplicationContext(), "", 1);
                                 notification_sent = true;
                             }

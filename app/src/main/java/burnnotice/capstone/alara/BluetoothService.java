@@ -1,40 +1,33 @@
 package burnnotice.capstone.alara;
 
-import android.app.Activity;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
 import android.widget.EditText;
-import android.widget.Button;
 
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static android.support.constraint.Constraints.TAG;
-import static burnnotice.capstone.alara.BluetoothReceiver.dbl_received_data;
+import static android.util.Half.NaN;
 
 // AG: Modified from https://stackoverflow.com/questions/13450406/ ...
 // ... how-to-receive-serial-data-using-android-bluetooth
 
+// AG: Changed from Activity to Service
+
 public class BluetoothService extends Service
 {
+    private static final String TAG = BluetoothService.class.getSimpleName();
 //    TextView myLabel;
     EditText myTextbox;
     BluetoothAdapter mBluetoothAdapter;
@@ -49,9 +42,9 @@ public class BluetoothService extends Service
     volatile boolean stopWorker;
 
     // AG: Initialize variables
-    public static double volts, uv_index, instant_irradiance, cumul_irradiance, exposure_percent, user_MED = 0;
-    LinkedList<Double> history_irradiance = new LinkedList<>();
-    String user_input_MED;
+    private static double incoming_data, exposure_percentage, volts, uv_index, instant_irradiance,
+            cumul_irradiance, exposure_percent, user_MED = 0;
+    private int user_input_skin_type = 0;
 
     // AG: Created for Service
     @Nullable
@@ -60,16 +53,11 @@ public class BluetoothService extends Service
         return null; // AG: Don't need to bind
     }
 
-    // AG: Created for Service, runs until app is closed
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY;
-    }
-
     // AG: Changed Bluetooth to Service, no longer need GUI buttons in onCreate
-    public void onCreate(Bundle savedInstanceState)
+    public void onCreate()
     {
         super.onCreate();
+        Log.d(TAG, "onCreate running");
 
         // AG: Connect to device via BT
             try
@@ -81,60 +69,16 @@ public class BluetoothService extends Service
             }
             catch (IOException ex) { ex.printStackTrace();}
 
-//        setContentView(R.layout.content_bluetooth);
-//
-//        Button openButton = (Button)findViewById(R.id.open);
-//        Button sendButton = (Button)findViewById(R.id.send);
-//        Button closeButton = (Button)findViewById(R.id.close);
-//        myLabel = (TextView)findViewById(R.id.label);
-//        myTextbox = (EditText)findViewById(R.id.entry);
-//
-//        //Open Button
-//        openButton.setOnClickListener(new View.OnClickListener()
-//        {
-//            public void onClick(View v)
-//            {
-//                try
-//                {
-//                    // AG: Changed to if statement, to handle case when BT not available
-//                    if (findBT()) {
-//                    openBT();
-//                    }
-//                }
-//                catch (IOException ex) { }
-//            }
-//        });
+    }
 
-        //Send Button
-//        sendButton.setOnClickListener(new View.OnClickListener()
-//        {
-//            public void onClick(View v)
-//            {
-//                try
-//                {
-//                    sendData();
-//                }
-//                catch (IOException ex) { }
-//                catch (NullPointerException NPE) { } // AG: Can press send, even if nothing opened
-//            }
-//        });
-
-        //Close button
-//        closeButton.setOnClickListener(new View.OnClickListener()
-//        {
-//            public void onClick(View v)
-//            {
-//                try
-//                {
-//                    closeBT();
-//                }
-//                catch (IOException ex) { }
-//                catch (NullPointerException NPE) { } // AG: Can press close, even if nothing opened
-//            }
-//        });
+    // AG: Created for Service, runs until app is closed
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_STICKY;
     }
 
     // AG: Created for Service
+    @Override
     public void onDestroy() {
         try {
             closeBT();
@@ -150,7 +94,7 @@ public class BluetoothService extends Service
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if(mBluetoothAdapter == null)
         {
-            Log.d("STATUS","No bluetooth adapter available");
+            Log.d(TAG,"No bluetooth adapter available");
             return false; // AG: Can return, even if void method; will quit method
         }
 
@@ -174,7 +118,7 @@ public class BluetoothService extends Service
                 }
             }
         }
-        Log.d("STATUS","Bluetooth Device Found");
+        Log.d(TAG,"Bluetooth Device Found");
         return true;
     }
 
@@ -205,18 +149,19 @@ public class BluetoothService extends Service
 
         beginListenForData();
 
-        Log.d("STATUS","Bluetooth Opened");
+        Log.d(TAG,"Bluetooth Opened");
     }
 
     void beginListenForData()
     {
         final Handler handler = new Handler();
 
+        // TODO: Change delimiter, if necessary
         final byte delimiter = 10; //This is the ASCII code for a newline character
 
         stopWorker = false;
         readBufferPosition = 0;
-        readBuffer = new byte[1024];
+        readBuffer = new byte[1024]; // AG: Up to 1024 characters (kilobyte)
         workerThread = new Thread(new Runnable()
         {
             public void run()
@@ -237,16 +182,23 @@ public class BluetoothService extends Service
                                 {
                                     byte[] encodedBytes = new byte[readBufferPosition];
                                     System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
-                                    final String data = new String(encodedBytes, "US-ASCII");
+                                    final String incoming_data = new String(encodedBytes, "US-ASCII");
                                     readBufferPosition = 0;
 
                                     handler.post(new Runnable()
                                     {
                                         public void run()
                                         {
-                                            Log.d("Data: ",data);
+                                            Log.d(TAG, incoming_data);
+
+                                            // TODO: Create splash page so we don't have to call getSkinType() every time
+
                                             getSkinType();
-                                            calculateExposure(data);
+                                            exposure_percentage = calculateExposure(incoming_data);
+                                            // AG: Added broadcast of received data
+                                            Intent intent = new Intent("Alara.Broadcast.EXPOSURE");
+                                            intent.putExtra("CALCULATED_EXPOSURE", exposure_percentage);
+                                            BluetoothService.this.sendBroadcast(intent);
                                         }
                                     });
                                 }
@@ -271,50 +223,53 @@ public class BluetoothService extends Service
     // AG: Created method to get skin type from user
     void getSkinType() {
 
-        SharedPreferences sharedPref = getApplicationContext().getSharedPreferences("User Entered Skin Type", Context.MODE_PRIVATE);
-        String defaultValue = getResources().getStringArray(R.array.list_skin_types)[0];
-        user_input_MED = sharedPref.getString(getString(R.string.skin_types), defaultValue);
+        AlaraSharedPreferences sharedPreferences = new AlaraSharedPreferences();
+        user_input_skin_type = sharedPreferences.getSkinType(getApplicationContext());
 
-        if (user_input_MED.equals("Type I: Always burns, doesn't tan")) {
-            user_MED = 15;
-        }
-        else if (user_input_MED.equals("Type II: Burns easily")) {
-            user_MED = 25;
-        }
-        else if (user_input_MED.equals("Type III: Tans after initial burn")) {
-            user_MED = 30;
-        }
-        else if (user_input_MED.equals("Type IV: Burns minimally, tans easily")) {
-            user_MED = 40;
-        }
-        else if (user_input_MED.equals("Type V: Rarely burns, tans well")) {
-            user_MED = 60;
-        }
-        else if (user_input_MED.equals("Type VI: Never burns, always tan")) {
-            user_MED = 90;
+        // TODO: Change MEDs as necessary
+
+        switch (user_input_skin_type){
+            case 1:
+                user_MED = 15;
+                break;
+            case 2:
+                user_MED = 25;
+                break;
+            case 3:
+                user_MED = 30;
+                break;
+            case 4:
+                user_MED = 40;
+                break;
+            case 5:
+                user_MED = 60;
+                break;
+            case 6:
+                user_MED = 90;
+                break;
         }
 
         Log.d("User MED is: %d", String.valueOf(user_MED));
     }
 
     // AG: Created method to take input data and calculate exposure
-    void calculateExposure(String str_data) {
-        dbl_received_data = Double.parseDouble(str_data); // AG: convert string to double
-        if (dbl_received_data < 0) { // AG: if negative value, assume negligible and approximately 0
-            dbl_received_data = 0;
+    double calculateExposure(String raw_data) {
+        incoming_data = Double.parseDouble(raw_data); // AG: convert string to double
+        if (incoming_data < 0) { // AG: if negative value, assume negligible and approximately 0
+            incoming_data = 0;
         }
 
         // TODO: Change voltage as necessary
-        volts = dbl_received_data / 4096 * 5; // AG: convert bits (bytes?) to voltage
+        volts = incoming_data / 4095 * 5; // AG: convert bytes to voltage
         uv_index = volts / 10;
         instant_irradiance = uv_index * 0.0025; // AG: convert UV index to instant_irradiance (1 = 0.0025 mW/cm^2)
         // AG: UV index conversion according to https://escholarship.org/uc/item/5925w4hq
         cumul_irradiance = cumul_irradiance + instant_irradiance;
         exposure_percent = cumul_irradiance / user_MED;
 
-        // TODO: Verify output
+        return exposure_percent;
 
-        history_irradiance.add(instant_irradiance);
+        // TODO: Verify calibration
     }
 
     void sendData() throws IOException
@@ -322,7 +277,7 @@ public class BluetoothService extends Service
         String msg = myTextbox.getText().toString();
         msg += "\n";
         mmOutputStream.write(msg.getBytes());
-        Log.d("STATUS","Data Sent");
+        Log.d(TAG,"Data Sent");
     }
 
     void closeBT() throws IOException
@@ -331,6 +286,6 @@ public class BluetoothService extends Service
         mmOutputStream.close();
         mmInputStream.close();
         mmSocket.close();
-        Log.d("STATUS","Bluetooth Closed");
+        Log.d(TAG,"Bluetooth Closed");
     }
 }

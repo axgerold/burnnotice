@@ -33,13 +33,9 @@
         // Bluetooth Activity
         <service
             android:name=".BluetoothService"
-            android:label="@string/action_bluetooth"
-            android:parentActivityName=".MainActivity" />
-
-        <receiver
-            android:name=".BluetoothReceiver"
             android:enabled="true"
-            android:exported="true"></receiver>
+            android:exported="true" />
+
     </application>
 
 </manifest>
