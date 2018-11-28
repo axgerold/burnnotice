@@ -19,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static double calculated_exposure_percentage = 0;
+    BroadcastReceiver myReceiver = new myBroadcastReceiver();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
         // AG: Starts Bluetooth connection
         Log.d(TAG, "onCreate running, ready to start Service");
         startService(new Intent(getApplicationContext(), BluetoothService.class));
-        BroadcastReceiver myReceiver = new mBroadcastReceiver();
         registerReceiver(myReceiver, new IntentFilter("Alara.Broadcast.EXPOSURE"));
 
 //        AG: Use button function to send test notifications
@@ -75,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
     boolean notification_sent = false;
 
     // AG: Creating receiver for broadcast
-    public class mBroadcastReceiver extends BroadcastReceiver {
+    public class myBroadcastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) { // AG: runs on UI thread
@@ -122,5 +122,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         progressThread.start();
+    }
+
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(myReceiver);
+        super.onDestroy();
     }
 }

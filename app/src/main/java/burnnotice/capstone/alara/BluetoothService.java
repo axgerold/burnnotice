@@ -18,8 +18,6 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
-import static android.util.Half.NaN;
-
 // AG: Modified from https://stackoverflow.com/questions/13450406/ ...
 // ... how-to-receive-serial-data-using-android-bluetooth
 
@@ -85,7 +83,9 @@ public class BluetoothService extends Service
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         super.onDestroy();
+
     }
 
     // AG: Changed void to boolean method to pass by openBT if BT not found/null

@@ -27,7 +27,7 @@ public class Notifications {
     /**
      * The unique identifier for this type of notification.
      */
-    private static final String NOTIFICATION_TAG = "Exposure";
+    private static final String TAG = Notifications.class.getSimpleName();
 
     /**
      * Shows the notification, or updates a previously shown notification of
@@ -178,9 +178,9 @@ public class Notifications {
         final NotificationManager nm = (NotificationManager) context
                 .getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-            nm.notify(NOTIFICATION_TAG, 0, notification);
+            nm.notify(TAG, 0, notification);
         } else {
-            nm.notify(NOTIFICATION_TAG.hashCode(), notification);
+            nm.notify(TAG.hashCode(), notification);
         }
     }
 
@@ -193,9 +193,9 @@ public class Notifications {
         final NotificationManager nm = (NotificationManager) context
                 .getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ECLAIR) {
-            nm.cancel(NOTIFICATION_TAG, 0);
+            nm.cancel(TAG, 0);
         } else {
-            nm.cancel(NOTIFICATION_TAG.hashCode());
+            nm.cancel(TAG.hashCode());
         }
     }
 }
